@@ -1,21 +1,31 @@
 package main
 
 import (
-  "fmt"
+	"api-gateway/controllers"
+	"api-gateway/database"
+	"api-gateway/middleware"
+	"github.com/gin-gonic/gin"
 )
 
-//TIP <p>To run your code, right-click the code and select <b>Run</b>.</p> <p>Alternatively, click
-// the <icon src="AllIcons.Actions.Execute"/> icon in the gutter and select the <b>Run</b> menu item from here.</p>
-
 func main() {
-  //TIP <p>Press <shortcut actionId="ShowIntentionActions"/> when your caret is at the underlined text
-  // to see how GoLand suggests fixing the warning.</p><p>Alternatively, if available, click the lightbulb to view possible fixes.</p>
-  s := "gopher"
-  fmt.Println("Hello and welcome, %s!", s)
+	// Подключение к базе данных и автоматическая миграция
+	database.Connect()
 
-  for i := 1; i <= 5; i++ {
-	//TIP <p>To start your debugging session, right-click your code in the editor and select the Debug option.</p> <p>We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-	// for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.</p>
-	fmt.Println("i =", 100/i)
-  }
+	// Инициализация маршрутов
+	r := gin.Default()
+
+	// Роуты регистрации и логина
+	r.POST("/register", controllers.Register)
+	r.POST("/login", controllers.Login)
+
+	// Защищённый маршрут для профиля
+	protected := r.Group("/api")
+	protected.Use(middleware.AuthMiddleware())
+	protected.GET("/profile", controllers.Profile)
+
+	// Роут для создания заказа
+	r.POST("/create-order", controllers.CreateOrder)
+
+	// Запуск сервера на порту 8085
+	r.Run(":8085") // Здесь указываем порт 8085
 }
