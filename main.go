@@ -2,25 +2,27 @@ package main
 
 import (
 	"api-gateway/controllers"
-	"api-gateway/database"
+	handlers "api-gateway/handler"
 	"api-gateway/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	database.Connect()
+	productServiceURL := "http://product-service:8082/api/v1"
+	categoryServiceURL := "http://category-service:8083/api/v1"
 
-	r := gin.Default()
+	productHandler := &handlers.ProductHandler{ProductServiceURL: productServiceURL}
+	categoryHandler := &handlers.CategoryHandler{CategoryServiceURL: categoryServiceURL}
 
-	r.POST("/register", controllers.Register)
-	r.POST("/login", controllers.Login)
+	router := handlers.NewRouter(productHandler, categoryHandler)
 
-	protected := r.Group("/api")
+	router.POST("/register", controllers.Register)
+	router.POST("/login", controllers.Login)
+
+	protected := router.Group("/api")
 	protected.Use(middleware.AuthMiddleware())
 	protected.GET("/profile", controllers.Profile)
 
-	r.POST("/create-order", controllers.CreateOrder)
+	router.POST("/create-order", controllers.CreateOrder)
 
-	r.Run(":8085")
-
+	router.Run(":8085")
 }
