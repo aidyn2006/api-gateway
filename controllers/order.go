@@ -64,6 +64,6 @@ func CreateOrder(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Order created successfully",
-		"data":    json.RawMessage(body), // содержимое ответа Order Service
+		"data":    json.RawMessage(body),
 	})
 }

@@ -28,10 +28,8 @@ func Register(c *gin.Context) {
 	}
 	c.Bind(&body)
 
-	// Hash the password
 	hash, _ := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
 
-	// Create user in the DB
 	user := models.User{
 		Username: body.Username,
 		Name:     body.Name,
@@ -55,7 +53,6 @@ func Login(c *gin.Context) {
 	}
 	c.Bind(&body)
 
-	// Find user by username
 	var user models.User
 	database.DB.Where("username = ?", body.Username).First(&user)
 
@@ -64,14 +61,12 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Compare passwords
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
 		return
 	}
 
-	// Generate JWT token
 	expirationTime := time.Now().Add(time.Hour * 24)
 	claims := &Claims{
 		UserID:   user.UserID,
@@ -88,6 +83,28 @@ func Login(c *gin.Context) {
 }
 
 func Profile(c *gin.Context) {
-	user, _ := c.Get("user")
-	c.JSON(http.StatusOK, gin.H{"user": user})
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
+	userIDUint, ok := userID.(uint)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	var user models.User
+	result := database.DB.Where("user_id = ?", userIDUint).First(&user)
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"username": user.Username,
+		"name":     user.Name,
+		"email":    user.Email,
+	})
 }
